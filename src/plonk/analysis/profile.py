@@ -416,7 +416,8 @@ class Profile:
             _units = list()
             for column in columns:
                 try:
-                    _units.append(self[column].units)
+                    _units.append(_get_unit(self, column, units).units)
+                    # _units.append(self[column].units)
                 except AttributeError:
                     _units.append(plonk_units('dimensionless'))
         else:
