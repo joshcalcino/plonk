@@ -253,7 +253,13 @@ class Simulation:
             glob = self.prefix + 'Sink[0-9][0-9][0-9][0-9]N[0-9][0-9].ev'
 
         n = len(self.prefix) + len('Sink')
-        n_sinks = len(np.unique({p.name[n : n + 4] for p in self.paths['directory'].glob(glob)}))
+        n_sinks = len({p.name[n : n + 4] for p in self.paths['directory'].glob(glob)})
+        # n_sinks = len(np.unique({p.name[n : n + 4] for p in self.paths['directory'].glob(glob)}))
+        # print(self.paths['directory'].glob(glob))
+        # print({p.name[n : n + 4] for p in self.paths['directory'].glob(glob)})
+        # print(np.unique({p.name[n : n + 4] for p in self.paths['directory'].glob(glob)}))
+        # print(len(np.unique({p.name[n : n + 4] for p in self.paths['directory'].glob(glob)})))
+        # print("n_sinks is ", n_sinks)
         sinks = list()
         for idx in range(1, n_sinks + 1):
             sinks.append(

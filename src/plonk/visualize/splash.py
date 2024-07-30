@@ -9,6 +9,7 @@ from numpy import ndarray
 
 RADKERNEL = 2.0
 RADKERNEL2 = 4.0
+# RADKERNEL2 = 10.0
 CNORMK3D = 1.0 / np.pi
 
 NPTS = 100

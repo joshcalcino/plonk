@@ -1439,9 +1439,16 @@ class Sinks:
     """
 
     def __init__(
-        self, base: Snap, indices: Union[ndarray, slice, list, int, tuple] = None
+        self, base: Snap, indices: Union[ndarray, slice, list, int, tuple] = None,
+        combine: Union[ndarray, slice, list, tuple] = None
     ):
         self.base = base
+
+        if combine is not None:
+            if indices is not None:
+                logger.warning('Sinks will be combined, ignoring indices')
+            self._combine = _input_indices_array(inp=combine, max_slice=base.num_sinks)
+
 
         if indices is None:
             indices = np.arange(base.num_sinks)

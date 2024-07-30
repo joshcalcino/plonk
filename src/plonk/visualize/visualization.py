@@ -360,23 +360,30 @@ def _interpolation_plot(
         num_pixels=num_pixels,
     )
 
+    return_plot = _kwargs.pop('return_plot', False)
+    # del _kwargs['return_plot']
+    # print(_kwargs['return_plot'])
+
     # Make the actual plot
-    _interpolated_plot(
-        interpolated_data=_data,
-        extent=_extent,
-        names={'quantity': quantity, 'x': x, 'y': y},
-        kind=kind,
-        interp=interp,
-        weighted=weighted,
-        units=_units,
-        ax=ax,
-        fig=fig,
-        ax_kwargs=ax_kwargs,
-        colorbar_kwargs=colorbar_kwargs,
-        **_kwargs,
+    _plot_object = _interpolated_plot(
+                    interpolated_data=_data,
+                    extent=_extent,
+                    names={'quantity': quantity, 'x': x, 'y': y},
+                    kind=kind,
+                    interp=interp,
+                    weighted=weighted,
+                    units=_units,
+                    ax=ax,
+                    fig=fig,
+                    ax_kwargs=ax_kwargs,
+                    colorbar_kwargs=colorbar_kwargs,
+                    **_kwargs,
     )
 
-    return ax
+    if return_plot:
+        return _plot_object
+    else:
+        return ax
 
 
 def _interpolated_data(
@@ -535,10 +542,12 @@ def _interpolated_plot(
             qunit = units['quantity']
         if np.allclose(qunit.magnitude, 1.0):
             qunit = qunit.units
-        qlabel = qname
-        if f'{qunit:~P}' != '':
-            qlabel = qlabel + f' [{qunit:~P}]'
-        # cbar.set_label(qlabel)
+        if not _kwargs.pop('label', None):
+            qlabel = qname
+            if f'{qunit:~P}' != '':
+                qlabel = qlabel + f' [{qunit:~P}]'
+            cbar.set_label(qlabel)
+    return plot_object
 
 
 def plot(
@@ -794,22 +803,66 @@ def _plot_plot(
             _ylim = ylim.to(yunit)
         ax.set_ylim(_ylim.magnitude)
 
+    # if show_colorbar:
+    #     divider = make_axes_locatable(ax)
+    #     _kwargs = copy(colorbar_kwargs)
+    #     position = _kwargs.pop('position', 'right')
+    #     size = _kwargs.pop('size', '5%')
+    #     pad = _kwargs.pop('pad', '2%')
+    #     if position in ('top', 'bottom'):
+    #         _kwargs.update({'orientation': 'horizontal'})
+    #     cax = divider.append_axes(position=position, size=size, pad=pad)
+
+
     if show_colorbar:
-        divider = make_axes_locatable(ax)
         _kwargs = copy(colorbar_kwargs)
         position = _kwargs.pop('position', 'right')
-        size = _kwargs.pop('size', '5%')
-        pad = _kwargs.pop('pad', '2%')
+        divide_ax = _kwargs.pop('divide_ax', True)
         if position in ('top', 'bottom'):
             _kwargs.update({'orientation': 'horizontal'})
-        cax = divider.append_axes(position=position, size=size, pad=pad)
+        if divide_ax:
+            divider = make_axes_locatable(ax)
+            size = _kwargs.pop('size', '5%')
+            pad = _kwargs.pop('pad', '2%')
+            cax = divider.append_axes(position=position, size=size, pad=pad)
+        else: # Make a new axes and do not split the previous one
+            # This is useful for plots created with matplotlib.gridspec
+            size = _kwargs.pop('size', 0.05)
+            pad = _kwargs.pop('pad', 0.02)
+            ax_pos = ax.get_position()
+
+            # Top or bottom cbars
+            if position in ('top', 'bottom'):
+                width = ax_pos.width
+                left = ax_pos.x0
+                height = ax_pos.height * size
+            if position == 'top':
+                bottom = ax_pos.y0 + ax_pos.height + pad
+            elif position == 'bottom':
+                bottom = ax_pos.y0 - pad
+            # Left or right cbars
+            if position in ('right', 'left'):
+                width = ax_pos.width * size
+                bottom = ax_pos.y0
+                height = ax_pos.height
+            if position == 'left':
+                left = ax_pos.x0 - width - pad
+            elif position == 'right':
+                left = ax_pos.x1 + pad #  - width
+
+            # Finally add the cbar ax
+            cax = fig.add_axes((left, bottom, width, height))
+
+
+        print(_kwargs)
         cbar = fig.colorbar(plot_object, cax, **_kwargs)
 
         cunit = units['c']
         if np.allclose(cunit.magnitude, 1.0):
             cunit = cunit.units
         cname = pretty_array_name(names["c"])
-        cbar.set_label(f'{cname} [{cunit:~P}]')
+        if not _kwargs.pop('label', None):
+            cbar.solids.set(alpha=1)
 
 
 def _convert_units_for_cmap(vm, name, units, interp, weighted):
