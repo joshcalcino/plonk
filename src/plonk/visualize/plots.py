@@ -119,14 +119,18 @@ def imshow(*, interpolated_data: ndarray, extent: Extent, ax: Any, **kwargs):
         norm = _kwargs.pop('norm')
     except KeyError:
         norm = 'linear'
-    if norm.lower() in ('linear', 'lin'):
-        norm = mpl.colors.Normalize
-    elif norm.lower() in ('logarithic', 'logarithm', 'log', 'log10'):
-        norm = mpl.colors.LogNorm
-    else:
-        raise ValueError('Cannot determine normalization for colorbar')
+    try:
+        print(norm)
+        if norm.lower() in ('linear', 'lin'):
+            norm = mpl.colors.Normalize
+        elif norm.lower() in ('logarithic', 'logarithm', 'log', 'log10'):
+            norm = mpl.colors.LogNorm
+        else:
+            raise ValueError('Cannot determine normalization for colorbar')
+        norm = norm(vmin=_kwargs['vmin'], vmax=_kwargs['vmax'])
+    except AttributeError:
+        pass
 
-    norm = norm(vmin=_kwargs['vmin'], vmax=_kwargs['vmax'])
     del _kwargs['vmin']
     del _kwargs['vmax']
 

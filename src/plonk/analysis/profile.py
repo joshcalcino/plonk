@@ -32,6 +32,7 @@ from ..utils.math import average
 from ..utils.snap import dust_array_names, vector_array_names
 from ..utils.strings import is_documented_by, pretty_array_name
 from .extra import extra_profiles
+from .discs import semi_major_axis
 
 if TYPE_CHECKING:
     from ..snap.snap import SnapLike
@@ -145,7 +146,7 @@ class Profile:
 
         self._weights = self.snap['mass']
         self._mask = _setup_particle_mask(snap, ignore_accreted)
-        self._x = _calculate_x(snap, self._mask, ndim, coordinate)
+        self._x = _calculate_x(snap, self._mask, ndim, coordinate, ignore_accreted=ignore_accreted)
         self.range = _set_range(self._x, cmin, cmax)
         self.n_bins = n_bins
 
@@ -158,7 +159,11 @@ class Profile:
         if ndim == 1:
             self._coordinate = coordinate
         else:
-            self._coordinate = 'radius'
+            if coordinate == 'semi_major_axis':
+                self._coordinate = coordinate
+            else:
+                self._coordinate = 'radius'
+        print(coordinate)
         self._profiles[self._coordinate] = self.bin_centers
         self._profiles['number'] = np.histogram(
             self._x.magnitude, self.bin_edges.magnitude
@@ -591,9 +596,17 @@ def _setup_particle_mask(snap: SnapLike, ignore_accreted: bool) -> ndarray:
     return h > 0
 
 
-def _calculate_x(snap: SnapLike, mask: ndarray, ndim: int, coordinate: str) -> Quantity:
+def _calculate_x(
+    snap: SnapLike,
+    mask: ndarray,
+    ndim: int,
+    coordinate: str,
+    ignore_accreted: bool = False
+) -> Quantity:
     pos: Quantity = snap['position']
+    vel: Quantity = snap['velocity']
     pos = pos[mask]
+    vel = vel[mask]
     if ndim == 1:
         if coordinate == 'x':
             return pos[:, 0]
@@ -602,10 +615,13 @@ def _calculate_x(snap: SnapLike, mask: ndarray, ndim: int, coordinate: str) -> Q
         if coordinate == 'z':
             return pos[:, 2]
         raise ValueError('coordinate must be "x", "y", or "z" for ndim==1')
-    if ndim == 2:
-        return np.sqrt(pos[:, 0] ** 2 + pos[:, 1] ** 2)
-    if ndim == 3:
-        return np.sqrt(pos[:, 0] ** 2 + pos[:, 1] ** 2 + pos[:, 2] ** 2)
+    if coordinate == 'semi_major_axis':
+        return semi_major_axis(snap, ignore_accreted=ignore_accreted)
+    else:
+        if ndim == 2:
+            return np.sqrt(pos[:, 0] ** 2 + pos[:, 1] ** 2)
+        if ndim == 3:
+            return np.sqrt(pos[:, 0] ** 2 + pos[:, 1] ** 2 + pos[:, 2] ** 2)
     raise ValueError('Unknown ndim: cannot calculate x array')
 
 

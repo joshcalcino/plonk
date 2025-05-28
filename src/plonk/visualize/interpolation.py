@@ -102,6 +102,7 @@ def interpolate(
     _quantity, _x, _y, _z = _get_arrays_from_str(snap=snap, quantity=quantity, x=x, y=y)
     _h = snap.array_in_code_units('smoothing_length')
     _m = snap.array_in_code_units('mass')
+    print("_quantity", _quantity)
 
     extent = (
         (extent[0] / snap.code_units['length']).to_base_units().magnitude,
@@ -331,6 +332,8 @@ def _interpolate(
         weighted = False
     if weighted:
         normalise = True
+
+    print("quantity", quantity)
 
     npixx, npixy = num_pixels
     xmin, ymin = extent[0], extent[2]

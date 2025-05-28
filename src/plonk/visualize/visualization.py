@@ -673,6 +673,8 @@ def _plot(
     logger.debug(f'Plotting particles "{x}" vs "{y}"" on snap: {snap.file_path.name}')
     _kwargs = copy(kwargs)
 
+    return_plot = _kwargs.pop('return_plot', False)
+
     if ax is None:
         fig, ax = plt.subplots()
     else:
@@ -690,11 +692,12 @@ def _plot(
         # The subsnaps list is just a list with the original snap
         subsnaps = [snap]
 
+    _plot_objects = []
     for subsnap in subsnaps:
         _x, _y, _c, _s, _units = _plot_data(
             snap=subsnap, x=x, y=y, c=c, s=s, units=units
         )
-        _plot_plot(
+        _plot_object = _plot_plot(
             x=_x,
             y=_y,
             c=_c,
@@ -709,8 +712,17 @@ def _plot(
             colorbar_kwargs=colorbar_kwargs,
             **_kwargs,
         )
+        print(_plot_object)
 
-    return ax
+        _plot_objects.append(_plot_object)
+
+    if return_plot:
+        if len(_plot_objects) > 1:
+            return _plot_objects
+        else:
+            return _plot_object
+    else:
+        return ax
 
 
 def _plot_data(snap, x, y, c, s, units):
@@ -731,7 +743,9 @@ def _plot_data(snap, x, y, c, s, units):
     if _c is not None:
         _c = _c.to(_units['c']).magnitude
     if _s is not None:
-        _s = _s.to(_units['s']).magnitude
+        if _units['s'] is not None:
+            _s = _s.to(_units['s']).magnitude
+        print(_s)
 
     try:
         # ignore accreted particles
@@ -748,7 +762,10 @@ def _plot_data(snap, x, y, c, s, units):
         pass
 
     if _s is not None:
-        _s = 100 * _s / _s.max()
+        try:
+            _s = 100 * _s / _s.max()
+        except TypeError:
+            _s = _s
 
     return _x, _y, _c, _s, _units
 
@@ -771,7 +788,7 @@ def _plot_plot(
     show_colorbar = kwargs.pop('show_colorbar', c is not None)
 
     if s is None and c is None:
-        plots.plot(x=x, y=y, ax=ax, **kwargs)
+        plot_object = plots.plot(x=x, y=y, ax=ax, **kwargs)
     else:
         plot_object = plots.scatter(x=x, y=y, c=c, s=s, ax=ax, **kwargs)
 
@@ -853,8 +870,6 @@ def _plot_plot(
             # Finally add the cbar ax
             cax = fig.add_axes((left, bottom, width, height))
 
-
-        print(_kwargs)
         cbar = fig.colorbar(plot_object, cax, **_kwargs)
 
         cunit = units['c']
@@ -863,6 +878,8 @@ def _plot_plot(
         cname = pretty_array_name(names["c"])
         if not _kwargs.pop('label', None):
             cbar.solids.set(alpha=1)
+
+    return plot_object
 
 
 def _convert_units_for_cmap(vm, name, units, interp, weighted):
@@ -887,7 +904,10 @@ def _get_unit(snap, name, units):
     if name == 'projection':
         base_name = 'projection'
     else:
-        base_name = snap.base_array_name(name)
+        try:
+            base_name = snap.base_array_name(name)
+        except AttributeError:
+            return None
     if units is not None:
         if name in units:
             return 1 * plonk_units(units[name])

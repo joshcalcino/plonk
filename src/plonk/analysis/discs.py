@@ -21,6 +21,10 @@ G = (1 * plonk_units.newtonian_constant_of_gravitation).to_base_units()
 # Ignoring type, sub_type, (optional) smoothing_length
 array_requires = {
     'eccentricity': ['position', 'velocity'],
+    'eccentricity_vector': ['position', 'velocity'],
+    'eccentricity_x': ['position', 'velocity'],
+    'eccentricity_y': ['position', 'velocity'],
+    'eccentricity_z': ['position', 'velocity'],
     'inclination': ['position', 'velocity'],
     'keplerian_frequency': ['position'],
     'semi_major_axis': ['position', 'velocity'],
@@ -85,6 +89,141 @@ def eccentricity(
     eps = eps_k + eps_p
 
     return np.sqrt(1 + 2 * eps * (h / mu) ** 2)
+
+
+def eccentricity_vector(
+    snap: SnapLike,
+    central_body: Dict[str, Quantity] = None,
+    ignore_accreted: bool = False,
+) -> Quantity:
+    """Calculate the eccentricity vector.
+
+    Parameters
+    ----------
+    snap
+        The Snap object.
+    central_body : optional
+        A dictionary with the mass, position, and velocity (as Pint
+        quantities) of the central body around which the particles are
+        orbiting. If None, attempt to read from
+        snap.properties['central_body'].
+    ignore_accreted : optional
+        Ignore accreted particles. Default is False.
+
+    Returns
+    -------
+    Quantity
+        The eccentricity vector of the particles.
+    """
+    if ignore_accreted:
+        h: Quantity = snap['smoothing_length']
+        pos: Quantity = snap['position'][h > 0]
+        vel: Quantity = snap['velocity'][h > 0]
+    else:
+        pos = snap['position']
+        vel = snap['velocity']
+
+    if central_body is None:
+        try:
+            central_body = snap.properties['central_body']
+        except KeyError:
+            raise ValueError(
+                'must pass in central_body or '
+                'set both on snap with snap.set_central_body'
+            )
+
+    mu = (G * central_body['mass']).to_reduced_units()
+    r = pos - central_body['position']
+    v = vel - central_body['velocity']
+
+    h = cross(r, v)
+
+    return cross(v, h)/mu - r/norm(r, axis=1)[:, np.newaxis]
+
+
+def eccentricity_x(
+    snap: SnapLike,
+    central_body: Dict[str, Quantity] = None,
+    ignore_accreted: bool = False,
+) -> Quantity:
+    """Calculate the eccentricity x vector.
+
+    Parameters
+    ----------
+    snap
+        The Snap object.
+    central_body : optional
+        A dictionary with the mass, position, and velocity (as Pint
+        quantities) of the central body around which the particles are
+        orbiting. If None, attempt to read from
+        snap.properties['central_body'].
+    ignore_accreted : optional
+        Ignore accreted particles. Default is False.
+
+    Returns
+    -------
+    Quantity
+        The eccentricity x vector of the particles.
+    """
+
+    print(np.shape(eccentricity_vector(snap, central_body, ignore_accreted)))
+    return eccentricity_vector(snap, central_body, ignore_accreted)[:, 0]
+
+
+def eccentricity_y(
+    snap: SnapLike,
+    central_body: Dict[str, Quantity] = None,
+    ignore_accreted: bool = False,
+) -> Quantity:
+    """Calculate the eccentricity x vector.
+
+    Parameters
+    ----------
+    snap
+        The Snap object.
+    central_body : optional
+        A dictionary with the mass, position, and velocity (as Pint
+        quantities) of the central body around which the particles are
+        orbiting. If None, attempt to read from
+        snap.properties['central_body'].
+    ignore_accreted : optional
+        Ignore accreted particles. Default is False.
+
+    Returns
+    -------
+    Quantity
+        The eccentricity x vector of the particles.
+    """
+
+    return eccentricity_vector(snap, central_body, ignore_accreted)[:, 1]
+
+
+def eccentricity_z(
+    snap: SnapLike,
+    central_body: Dict[str, Quantity] = None,
+    ignore_accreted: bool = False,
+) -> Quantity:
+    """Calculate the eccentricity z vector.
+
+    Parameters
+    ----------
+    snap
+        The Snap object.
+    central_body : optional
+        A dictionary with the mass, position, and velocity (as Pint
+        quantities) of the central body around which the particles are
+        orbiting. If None, attempt to read from
+        snap.properties['central_body'].
+    ignore_accreted : optional
+        Ignore accreted particles. Default is False.
+
+    Returns
+    -------
+    Quantity
+        The eccentricity z vector of the particles.
+    """
+
+    return eccentricity_vector(snap, central_body, ignore_accreted)[:, 2]
 
 
 def inclination(
