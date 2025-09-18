@@ -35,7 +35,7 @@ from .readers import (
     snap_properties_and_units,
     snap_sink_registry,
 )
-
+from .readers.phantom_native import open_native_phantom
 
 class Snap:
     """Smoothed particle hydrodynamics Snap object.
@@ -165,7 +165,10 @@ class Snap:
         self.file_path = file_path
 
         # Set file_pointer
-        self._file_pointer = h5py.File(file_path, mode='r')
+        if h5py.is_hdf5(file_path):
+            self._file_pointer = h5py.File(file_path, mode='r')
+        else:
+            self._file_pointer = open_native_phantom(str(file_path))
 
         # Set data_source
         if data_source.lower() not in DATA_SOURCES:
@@ -220,7 +223,10 @@ class Snap:
 
     def reopen_file(self):
         """Re-open access to the underlying file."""
-        self._file_pointer = h5py.File(self.file_path, mode='r')
+        if h5py.is_hdf5(self.file_path):
+            self._file_pointer = h5py.File(self.file_path, mode='r')
+        else:
+            self._file_pointer = open_native_phantom(str(self.file_path))
 
     def add_array(self, vector: bool = False, dust: bool = False) -> Callable:
         """Decorate function to add array to Snap.
@@ -1439,7 +1445,7 @@ class Sinks:
     """
 
     def __init__(
-        self, base: Snap, indices: Union[ndarray, slice, list, int, tuple] = None,
+        self, base: Snap, indices: Union[ndarray, slice, list, tuple] = None,
         combine: Union[ndarray, slice, list, tuple] = None
     ):
         self.base = base

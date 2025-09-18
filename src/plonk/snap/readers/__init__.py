@@ -49,6 +49,11 @@ from ..._units import Quantity
 from .phantom import snap_array_registry as snap_array_registry_phantom
 from .phantom import snap_properties_and_units as snap_properties_and_units_phantom
 from .phantom import snap_sink_registry as snap_sink_registry_phantom
+from .phantom_native import (
+    snap_array_registry_native,
+    snap_properties_and_units_native,
+    snap_sink_registry_native,
+)
 
 DATA_SOURCES = ['phantom']
 
@@ -80,9 +85,11 @@ def snap_properties_and_units(
     # quantities, e.g. "149600000000.0 <Unit('meter')>" and "1.9891000000000002e+30
     # <Unit('kilogram')>".
 
-    if data_source.lower() == 'phantom':
+    if data_source.lower() != 'phantom':
+        raise RuntimeError('Cannot generate properties and units')
+    if isinstance(file_pointer, h5py.File):
         return snap_properties_and_units_phantom(file_pointer=file_pointer)
-    raise RuntimeError('Cannot generate properties and units')
+    return snap_properties_and_units_native(file_pointer=file_pointer)
 
 
 def snap_array_registry(
@@ -109,9 +116,11 @@ def snap_array_registry(
     # The keys are the names of the particle arrays and the values are functions that
     # return the array when called with snap as the argument.
 
-    if data_source.lower() == 'phantom':
+    if data_source.lower() != 'phantom':
+        raise RuntimeError('Cannot generate array registry')
+    if isinstance(file_pointer, h5py.File):
         return snap_array_registry_phantom(file_pointer=file_pointer, name_map=name_map)
-    raise RuntimeError('Cannot generate array registry')
+    return snap_array_registry_native(file_pointer=file_pointer, name_map=name_map)
 
 
 def snap_sink_registry(
@@ -138,6 +147,8 @@ def snap_sink_registry(
     # The keys are the names of the sink arrays and the values are functions that return
     # the array when called with snap as the argument.
 
-    if data_source.lower() == 'phantom':
+    if data_source.lower() != 'phantom':
+        raise RuntimeError('Cannot generate sink registry')
+    if isinstance(file_pointer, h5py.File):
         return snap_sink_registry_phantom(file_pointer=file_pointer, name_map=name_map)
-    raise RuntimeError('Cannot generate sink registry')
+    return snap_sink_registry_native(file_pointer=file_pointer, name_map=name_map)

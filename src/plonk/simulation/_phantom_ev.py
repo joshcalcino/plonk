@@ -90,11 +90,14 @@ def _get_data(columns: Tuple[str, ...], file_paths: Tuple[Path, ...]) -> DataFra
     _skiprows = [0]
     if len(times) > 1:
         for t1, t2 in zip(times, times[1:]):
-            if t2[0] < t1[-1]:
-                _skiprows.append(np.where(t2 < t1[-1])[0][-1] + 2)
-            else:
+            try:
+                if t2[0] < t1[-1]:
+                    _skiprows.append(np.where(t2 < t1[-1])[0][-1] + 2)
+                else:
+                    _skiprows.append(0)
+            except IndexError:
                 _skiprows.append(0)
-
+                
     df = pd.concat(
         (
             pd.read_csv(
@@ -102,7 +105,7 @@ def _get_data(columns: Tuple[str, ...], file_paths: Tuple[Path, ...]) -> DataFra
                 names=columns,
                 skiprows=skiprows,
                 skipinitialspace=True,
-                delim_whitespace=True,
+                sep=r'\s+',
                 comment='#',
             )
             for f, skiprows in zip(file_paths, _skiprows)

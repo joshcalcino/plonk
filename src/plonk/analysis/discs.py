@@ -166,7 +166,6 @@ def eccentricity_x(
         The eccentricity x vector of the particles.
     """
 
-    print(np.shape(eccentricity_vector(snap, central_body, ignore_accreted)))
     return eccentricity_vector(snap, central_body, ignore_accreted)[:, 0]
 
 

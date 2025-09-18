@@ -204,9 +204,12 @@ def snap_array_registry(
     array_registry['sub_type'] = sub_type
     array_registry['position'] = get_dataset('xyz', 'particles')
     array_registry['smoothing_length'] = get_dataset('h', 'particles')
-    arrays.remove('itype')
-    arrays.remove('xyz')
-    arrays.remove('h')
+    if 'itype' in arrays:
+        arrays.remove('itype')
+    if 'xyz' in arrays:
+        arrays.remove('xyz')
+    if 'h' in arrays:
+        arrays.remove('h')
 
     # Handle dust
     if ndustsmall > 0:
@@ -301,7 +304,18 @@ def get_dataset(dataset: str, group: str) -> Callable:
     """
 
     def func(snap: Snap) -> Quantity:
-        array = snap._file_pointer[f'{group}/{dataset}'][()]
+        # Attempt to read; if 'particles/itype' is missing, synthesize as ones (gas)
+        try:
+            array = snap._file_pointer[f'{group}/{dataset}'][()]
+        except KeyError:
+            if group == 'particles' and dataset == 'itype':
+                n = snap._file_pointer['header/nparttot'][()]
+                logger.debug(
+                    'Dataset "particles/itype" missing; creating array of ones (gas).'
+                )
+                array = np.ones(n, dtype=np.int32)
+            else:
+                raise
         name_map = snap._name_map[group]
         if dataset in name_map:
             name = name_map[dataset]
@@ -310,11 +324,15 @@ def get_dataset(dataset: str, group: str) -> Callable:
         try:
             unit = snap._array_code_units[name]
         except KeyError:
-            logger.error(
-                f'Cannot get unit of dataset "{group}/{dataset}" - '
-                'assuming dimensionless'
-            )
-            unit = plonk_units('dimensionless')
+            if group == 'particles' and dataset == 'itype':
+                # Synthetic itype: dimensionless without error log
+                unit = plonk_units('dimensionless')
+            else:
+                logger.error(
+                    f'Cannot get unit of dataset "{group}/{dataset}" - '
+                    'assuming dimensionless'
+                )
+                unit = plonk_units('dimensionless')
         return array * unit
 
     return func

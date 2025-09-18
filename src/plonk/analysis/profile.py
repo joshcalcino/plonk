@@ -163,7 +163,6 @@ class Profile:
                 self._coordinate = coordinate
             else:
                 self._coordinate = 'radius'
-        print(coordinate)
         self._profiles[self._coordinate] = self.bin_centers
         self._profiles['number'] = np.histogram(
             self._x.magnitude, self.bin_edges.magnitude
