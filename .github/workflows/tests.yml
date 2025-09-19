@@ -3,7 +3,7 @@ name: Tests
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
 
 jobs:
@@ -69,3 +69,81 @@ jobs:
         python -m coveralls --service=github
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  CompatibilityMatrix:
+    name: Compatibility (py=${{ matrix.python-version }}, np=${{ matrix.numpy }}, numba=${{ matrix.numba }})
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Python 3.10 combos
+          - { python-version: '3.10', numpy: '1.23.*', numba: '0.57.*' }
+          - { python-version: '3.10', numpy: '1.24.*', numba: '0.58.*' }
+          - { python-version: '3.10', numpy: '1.25.*', numba: '0.59.*' }
+          - { python-version: '3.10', numpy: '1.26.*', numba: '0.59.*' }
+          - { python-version: '3.10', numpy: '2.0.*',  numba: '0.60.*' }
+          - { python-version: '3.10', numpy: '2.1.*',  numba: '0.60.*' }
+          # Python 3.11 combos
+          - { python-version: '3.11', numpy: '1.24.*', numba: '0.58.*' }
+          - { python-version: '3.11', numpy: '1.25.*', numba: '0.59.*' }
+          - { python-version: '3.11', numpy: '1.26.*', numba: '0.59.*' }
+          - { python-version: '3.11', numpy: '2.0.*',  numba: '0.60.*' }
+          - { python-version: '3.11', numpy: '2.1.*',  numba: '0.60.*' }
+          # Python 3.12 combos (NumPy 2.x with Numba 0.60)
+          - { python-version: '3.12', numpy: '2.0.*',  numba: '0.60.*' }
+          - { python-version: '3.12', numpy: '2.1.*',  numba: '0.60.*' }
+          # Python 3.13 combos (NumPy 2.x with Numba 0.60)
+          - { python-version: '3.13', numpy: '2.0.*',  numba: '0.60.*' }
+          - { python-version: '3.13', numpy: '2.1.*',  numba: '0.60.*' }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create base conda environment
+        run: |
+          source '/usr/share/miniconda/etc/profile.d/conda.sh'
+          conda install -c conda-forge -y mamba
+          mamba create -y -n plonk-compat python=${{ matrix.python-version }} pip
+      - name: Install pinned NumPy/Numba and core deps
+        run: |
+          source '/usr/share/miniconda/etc/profile.d/conda.sh'
+          conda activate plonk-compat
+          mamba install -y \
+            numpy=${{ matrix.numpy }} \
+            numba=${{ matrix.numba }} \
+            scipy \
+            matplotlib \
+            pandas \
+            h5py \
+            pint \
+            toml \
+            pytest
+      - name: Show versions
+        run: |
+          source '/usr/share/miniconda/etc/profile.d/conda.sh'
+          conda activate plonk-compat
+          python -c "import sys, numpy, numba; print(sys.version); print('NumPy:', numpy.__version__); print('Numba:', numba.__version__)"
+      - name: Install plonk
+        run: |
+          source '/usr/share/miniconda/etc/profile.d/conda.sh'
+          conda activate plonk-compat
+          pip install -e .
+      - name: Run tests and summarize
+        run: |
+          source '/usr/share/miniconda/etc/profile.d/conda.sh'
+          conda activate plonk-compat
+          echo "Running pytest for py=${{ matrix.python-version }}, numpy=${{ matrix.numpy }}, numba=${{ matrix.numba }}"
+          python -m pytest -q
+          status=$?
+          if [ $status -eq 0 ]; then
+            result="PASS"
+          else
+            result="FAIL ($status)"
+          fi
+          {
+            echo "### Compatibility result"
+            echo "- Python: ${{ matrix.python-version }}"
+            echo "- NumPy:  ${{ matrix.numpy }}"
+            echo "- Numba:  ${{ matrix.numba }}"
+            echo "- Result: $result"
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
