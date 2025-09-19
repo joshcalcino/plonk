@@ -913,7 +913,7 @@ class Snap:
         neighbours = self.tree.query_ball_point(
             position.magnitude,
             r_kern * smoothing_length.magnitude,
-            n_jobs=-1,
+            workers=-1,
         )
 
         return neighbours

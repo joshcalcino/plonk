@@ -1,10 +1,10 @@
-h5py
-matplotlib
+h5py>=3.11
+matplotlib>=3.8
 myst-parser
-numba
-numpy
-pandas
+numba>=0.60
+numpy>=2.0
+pandas>=2.2
 pint>=0.10.1
 pydata-sphinx-theme
-scipy
+scipy>=1.13
 toml

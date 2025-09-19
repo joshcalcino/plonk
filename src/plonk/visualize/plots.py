@@ -115,24 +115,31 @@ def imshow(*, interpolated_data: ndarray, extent: Extent, ax: Any, **kwargs):
         A matplotlib AxesImage object.
     """
     _kwargs = copy(kwargs)
-    try:
-        norm = _kwargs.pop('norm')
-    except KeyError:
-        norm = 'linear'
-    try:
-        print(norm)
-        if norm.lower() in ('linear', 'lin'):
-            norm = mpl.colors.Normalize
-        elif norm.lower() in ('logarithic', 'logarithm', 'log', 'log10'):
-            norm = mpl.colors.LogNorm
+    norm_param = _kwargs.pop('norm', 'linear')
+    vmin = _kwargs.pop('vmin', None)
+    vmax = _kwargs.pop('vmax', None)
+
+    # Build a matplotlib norm safely
+    norm = None
+    if isinstance(norm_param, str):
+        n = norm_param.lower()
+        if n in ('linear', 'lin'):
+            norm_cls = mpl.colors.Normalize
+        elif n in ('logarithic', 'logarithm', 'log', 'log10'):
+            norm_cls = mpl.colors.LogNorm
         else:
             raise ValueError('Cannot determine normalization for colorbar')
-        norm = norm(vmin=_kwargs['vmin'], vmax=_kwargs['vmax'])
-    except AttributeError:
-        pass
-
-    del _kwargs['vmin']
-    del _kwargs['vmax']
+        norm = norm_cls(vmin=vmin, vmax=vmax)
+    elif norm_param is None:
+        # No norm specified: pass vmin/vmax directly to imshow if provided
+        if vmin is not None:
+            _kwargs['vmin'] = vmin
+        if vmax is not None:
+            _kwargs['vmax'] = vmax
+        norm = None
+    else:
+        # Assume user provided a matplotlib norm instance
+        norm = norm_param
 
     return ax.imshow(
         interpolated_data, origin='lower', extent=extent, norm=norm, **_kwargs
