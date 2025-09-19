@@ -24,6 +24,8 @@ Plonk is a Python tool for analysis and visualization of smoothed particle hydro
 
 With Plonk we aim to integrate the high quality SPH visualisation of [Splash](https://github.com/danieljprice/splash) into the modern Python astronomer workflow, and provide a framework for analysis of smoothed particle hydrodynamics simulation data.
 
++Compatibility: Plonk 0.8.0 is tested on Python 3.10–3.13 and is compatible with NumPy 2.x and Numba ≥ 0.60.
+
 Usage
 -----
 
@@ -165,7 +167,18 @@ conda activate plonk
 Requirements
 ------------
 
-Python 3.6+ with [h5py](https://www.h5py.org/), [matplotlib](https://www.matplotlib.org/), [numba](http://numba.pydata.org/), [numpy](https://numpy.org/), [pandas](https://pandas.pydata.org/), [pint](https://pint.readthedocs.io/), [scipy](https://www.scipy.org/), [toml](https://github.com/uiri/toml). Installing Plonk with conda or pip will install these dependencies.
+Python 3.10+ with the following core dependencies (minimum versions):
+
+- h5py >= 3.11
+- matplotlib >= 3.8
+- numba >= 0.60
+- numpy >= 2.0
+- pandas >= 2.2
+- pint >= 0.10.1
+- scipy >= 1.13
+- toml
+
+Installing Plonk with conda or pip will install these dependencies.
 
 Getting help
 ------------

@@ -15,6 +15,17 @@ Types of changes:
 
 ## [Unreleased]
 
+## [0.8.0] - 2025-09-19
+
+### Changed
+
+- Plonk now reads native phantom binary files.
+- Changes to plotting to make color bar placement nicer in multiplots
+
+### Notes
+
+- This release validates compatibility with NumPy 2.x and Numba ≥ 0.60 on Python 3.13.
+
 ## [0.7.4] - 2021-10-13
 
 ### Changed
