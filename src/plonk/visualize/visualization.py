@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from contextlib import suppress
 from copy import copy
 from typing import TYPE_CHECKING, Any, Dict, Sequence, Tuple, Union
-from collections.abc import Callable
 
 import matplotlib.pyplot as plt
 import numpy as np

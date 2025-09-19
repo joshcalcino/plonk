@@ -20,8 +20,8 @@ from typing import (
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from numpy import ndarray
+import pandas as pd
 from pandas import DataFrame
 from scipy.interpolate import interp1d
 
@@ -31,8 +31,8 @@ from .._units import units as plonk_units
 from ..utils.math import average
 from ..utils.snap import dust_array_names, vector_array_names
 from ..utils.strings import is_documented_by, pretty_array_name
-from .extra import extra_profiles
 from .discs import semi_major_axis
+from .extra import extra_profiles
 
 if TYPE_CHECKING:
     from ..snap.snap import SnapLike

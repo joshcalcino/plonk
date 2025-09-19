@@ -6,11 +6,11 @@ for interpolation of vector fields.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple
-from collections.abc import Callable
-
 import numpy as np
 from numpy import ndarray
+
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Tuple
 
 from .._logging import logger
 from .._units import Quantity

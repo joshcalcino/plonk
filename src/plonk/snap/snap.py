@@ -18,8 +18,8 @@ from pandas import DataFrame
 from scipy.spatial import cKDTree
 from scipy.spatial.transform import Rotation
 
-from .. import visualize
 from .. import analysis
+from .. import visualize
 from .._config import read_config
 from .._logging import logger
 from .._units import Quantity, array_units, generate_array_code_units
