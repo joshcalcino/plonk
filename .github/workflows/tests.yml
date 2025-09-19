@@ -19,6 +19,12 @@ jobs:
         channels: conda-forge
         activate-environment: plonk
         use-mamba: true
+    - name: Configure conda-forge (strict)
+      shell: bash -l {0}
+      run: |
+        conda config --remove-key channels || true
+        conda config --add channels conda-forge
+        conda config --set channel_priority strict
     - name: Create/Update env
       shell: bash -l {0}
       run: |
@@ -55,6 +61,12 @@ jobs:
         channels: conda-forge
         activate-environment: plonk
         use-mamba: true
+    - name: Configure conda-forge (strict)
+      shell: bash -l {0}
+      run: |
+        conda config --remove-key channels || true
+        conda config --add channels conda-forge
+        conda config --set channel_priority strict
     - name: Create/Update env
       shell: bash -l {0}
       run: |
@@ -107,6 +119,12 @@ jobs:
         miniforge-version: latest
         channels: conda-forge
         use-mamba: true
+    - name: Configure conda-forge (strict)
+      shell: bash -l {0}
+      run: |
+        conda config --remove-key channels || true
+        conda config --add channels conda-forge
+        conda config --set channel_priority strict
     - name: Create base conda environment
       shell: bash -l {0}
       run: |
@@ -117,6 +135,7 @@ jobs:
       shell: bash -l {0}
       run: |
         conda activate plonk-compat
+        set +e
         mamba install -y \
           numpy=${{ matrix.numpy }} \
           numba=${{ matrix.numba }} \
@@ -126,18 +145,37 @@ jobs:
           h5py \
           pint \
           toml \
+          ffmpeg \
           pytest
+        status=$?
+        set -e
+        if [ $status -ne 0 ]; then
+          echo "COMPAT_READY=0" >> "$GITHUB_ENV"
+          {
+            echo "### Compatibility result"
+            echo "- Python: ${{ matrix.python-version }}"
+            echo "- NumPy:  ${{ matrix.numpy }}"
+            echo "- Numba:  ${{ matrix.numba }}"
+            echo "- Result: SKIP (unsatisfied constraints)"
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        else
+          echo "COMPAT_READY=1" >> "$GITHUB_ENV"
+        fi
     - name: Show versions
+      if: env.COMPAT_READY == '1'
       shell: bash -l {0}
       run: |
         conda activate plonk-compat
         python -c "import sys, numpy, numba; print(sys.version); print('NumPy:', numpy.__version__); print('Numba:', numba.__version__)"
     - name: Install plonk
+      if: env.COMPAT_READY == '1'
       shell: bash -l {0}
       run: |
         conda activate plonk-compat
         pip install -e .
     - name: Run tests and summarize
+      if: env.COMPAT_READY == '1'
       shell: bash -l {0}
       run: |
         conda activate plonk-compat

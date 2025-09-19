@@ -22,6 +22,37 @@ if TYPE_CHECKING:
     from ..snap.snap import SnapLike
 
 
+def _save_animation(anim: _animation.FuncAnimation, filepath: Path, save_kwargs: Dict[str, Any]) -> None:
+    """Save animation robustly across Matplotlib writers.
+
+    - Prefer ffmpeg if available and add sensible extra_args.
+    - If ffmpeg is unavailable, fall back to pillow and ensure we do not pass
+      unsupported kwargs like extra_args to PillowWriter on older Matplotlib.
+    """
+    # Copy to avoid mutating caller's dict
+    _save_kwargs: Dict[str, Any] = dict(save_kwargs or {})
+
+    # Determine writer if not explicitly provided
+    writer = _save_kwargs.get("writer")
+    if writer is None and _animation.writers.is_available("ffmpeg"):
+        writer = "ffmpeg"
+        _save_kwargs["writer"] = writer
+
+    # Only pass extra_args when using ffmpeg; otherwise remove it
+    if writer == "ffmpeg":
+        _save_kwargs.setdefault("extra_args", ["-vcodec", "libx264"])
+    else:
+        _save_kwargs.pop("extra_args", None)
+
+    # Some older Matplotlib writer classes don't accept certain kwargs, so try
+    # once and fall back by stripping extra_args if needed
+    try:
+        anim.save(filepath, **_save_kwargs)
+    except TypeError:
+        _save_kwargs.pop("extra_args", None)
+        anim.save(filepath, **_save_kwargs)
+
+
 def animate(
     filename: Union[str, Path],
     *,
@@ -307,7 +338,7 @@ def animation_images(
     anim = _animation.FuncAnimation(
         fig, animate, frames=len(snaps), **func_animation_kwargs
     )
-    anim.save(filepath, extra_args=['-vcodec', 'libx264'], **save_kwargs)
+    _save_animation(anim, filepath, save_kwargs)
     plt.close()
     if tqdm is not None:
         pbar.close()
@@ -441,7 +472,7 @@ def animation_profiles(
     anim = _animation.FuncAnimation(
         fig, animate, frames=len(profiles), **func_animation_kwargs
     )
-    anim.save(filepath, extra_args=['-vcodec', 'libx264'], **save_kwargs)
+    _save_animation(anim, filepath, save_kwargs)
     plt.close()
     if tqdm is not None:
         pbar.close()
@@ -563,7 +594,7 @@ def animation_particles(
     anim = _animation.FuncAnimation(
         fig, animate, frames=len(snaps), **func_animation_kwargs
     )
-    anim.save(filepath, extra_args=['-vcodec', 'libx264'], **save_kwargs)
+    _save_animation(anim, filepath, save_kwargs)
     plt.close()
     if tqdm is not None:
         pbar.close()
